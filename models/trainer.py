@@ -1,0 +1,199 @@
+"""Executor for deep Q network models."""
+
+from __future__ import division
+from __future__ import print_function
+
+import sys
+sys.path.append('/home/junyoung/workspace/Lead_Optimization')
+
+import os
+import time
+from absl import logging
+import numpy as np
+import tensorflow as tf
+from rdkit import Chem
+from rdkit import DataStructs
+from rdkit.Chem import AllChem
+
+from baselines.common import schedules
+from baselines.deepq import replay_buffer
+
+# TODO(zzp): use the tf.estimator interface.
+class Trainer():
+
+    """Runs the training procedure.
+    Briefly, the agent runs the action network to get an action to take in
+    the environment. The state transition and reward are stored in the memory.
+    Periodically the agent samples a batch of samples from the memory to
+    update(train) its Q network. Note that the Q network and the action network
+    share the same set of parameters, so the action network is also updated by
+    the samples of (state, action, next_state, reward) batches.
+    Args:
+        hparams: tf.contrib.training.HParams. The hyper parameters of the model.
+        environment: molecules.Molecule. The environment to run on.
+        dqn: An instance of the DeepQNetwork class.
+    Returns:
+        None
+    """
+    def __init__(self, hparams, environment, dqn):
+        self.hparams = hparams
+        self.environment = environment
+        self.dqn = dqn
+
+        self.max_num_checkpoints = self.hparams['max_num_checkpoints']
+        self.num_episodes = self.hparams['num_episodes']
+        self.prioritized = self.hparams['prioritized']
+        self.replay_buffer_size = self.hparams['replay_buffer_size']
+        self.prioritized_alpha = self.hparams['prioritized_alpha']
+        self.prioritized_beta = self.hparams['prioritized_beta']
+        self.update_frequency = self.hparams['update_frequency']
+        self.save_frequency = self.hparams['save_frequency']
+        self.num_bootstrap_heads = self.hparams['num_bootstrap_heads']
+        self.max_steps_per_episode = self.hparams['max_steps_per_episode']
+        self.learning_frequency = self.hparams['learning_frequency']
+        self.batch_size = self.hparams['batch_size']
+        self.prioritized_epsilon = self.hparams['prioritized_epsilon']
+        self.fingerprint_length = self.hparams['fingerprint_length']
+        self.fingerprint_radius = self.hparams['fingerprint_radius']
+        self.model_dir = self.hparams['model_dir']
+
+    def run_training(self):
+        self.summary_writer = tf.summary.FileWriter(self.model_dir)
+        tf.reset_default_graph()
+        with tf.Session() as sess:
+            self.dqn.build()
+            model_saver = tf.train.Saver(max_to_keep=self.max_num_checkpoints)
+            # The schedule for the epsilon in epsilon greedy policy.
+            self.exploration = schedules.PiecewiseSchedule(
+                [(0, 1.0), (int(self.num_episodes / 2), 0.1),
+                 (self.num_episodes, 0.01)],
+                outside_value=0.01)
+            if self.prioritized:
+                self.memory = replay_buffer.PrioritizedReplayBuffer(self.replay_buffer_size,
+                                                               self.prioritized_alpha)
+                self.beta_schedule = schedules.LinearSchedule(
+                    self.num_episodes, initial_p=self.prioritized_beta, final_p=0)
+            else:
+                self.memory = replay_buffer.ReplayBuffer(self.replay_buffer_size)
+                self.beta_schedule = None
+            sess.run(tf.global_variables_initializer())
+            sess.run(self.dqn.update_op)
+            self.global_step = 0
+            for self.episode in range(self.num_episodes):
+                self.global_step = self._episode()
+                if (self.episode + 1) % self.update_frequency == 0:
+                    sess.run(self.dqn.update_op)
+                if (self.episode + 1) % self.save_frequency == 0:
+                    model_saver.save(
+                        sess,
+                        os.path.join(self.model_dir, 'ckpt'),
+                        global_step=self.global_step)
+
+    def _episode(self):
+        """Runs a single episode.
+        Args:
+            environment: molecules.Molecule; the environment to run on.
+            dqn: DeepQNetwork used for estimating rewards.
+            memory: ReplayBuffer used to store observations and rewards.
+            episode: Integer episode number.
+            global_step: Integer global step; the total number of steps across all
+              episodes.
+            hparams: HParams.
+            summary_writer: FileWriter used for writing Summary protos.
+            exploration: Schedule used for exploration in the environment.
+            beta_schedule: Schedule used for prioritized replay buffers.
+        Returns:
+            Updated global_step.
+        """
+        episode_start_time = time.time()
+        self.environment.initialize()
+        if self.num_bootstrap_heads:
+            self.head = np.random.randint(self.num_bootstrap_heads)
+        else:
+            self.head = 0
+        for step in range(self.max_steps_per_episode):
+            self.result = self._step()
+            if step == self.max_steps_per_episode - 1:
+                episode_summary = self.dqn.log_result(self.result.state, self.result.reward)
+                self.summary_writer.add_summary(episode_summary, self.global_step)
+                logging.info('Episode %d/%d took %gs', self.episode + 1, self.num_episodes,
+                             time.time() - episode_start_time)
+                logging.info('SMILES: %s\n', self.result.state)
+                # Use %s since reward can be a tuple or a float number.
+                logging.info('The reward is: %s', str(self.result.reward))
+            if (self.episode > min(50, self.num_episodes / 10)) and (self.global_step % self.learning_frequency == 0):
+                if self.prioritized:
+                    (state_t, _, reward_t, state_tp1, done_mask, weight,
+                     indices) = self.memory.sample(
+                      self.batch_size, beta=self.beta_schedule.value(self.episode))
+                else:
+                    (state_t, _, reward_t, state_tp1,
+                     done_mask) = self.memory.sample(self.batch_size)
+                    weight = np.ones([reward_t.shape[0]])
+                # np.atleast_2d cannot be used here because a new dimension will
+                # be always added in the front and there is no way of changing this.
+                if reward_t.ndim == 1:
+                    reward_t = np.expand_dims(reward_t, axis=1)
+                td_error, error_summary, _ = self.dqn.train(
+                    states=state_t,
+                    rewards=reward_t,
+                    next_states=state_tp1,
+                    done=np.expand_dims(done_mask, axis=1),
+                    weight=np.expand_dims(weight, axis=1))
+                self.summary_writer.add_summary(error_summary, self.global_step)
+                logging.info('Current TD error: %.4f', np.mean(np.abs(td_error)))
+                if self.prioritized:
+                    self.memory.update_priorities(
+                        indices,
+                        np.abs(np.squeeze(td_error) + self.prioritized_epsilon).tolist())
+            self.global_step += 1
+        return self.global_step
+
+    def _step(self):
+        """Runs a single step within an episode.
+           Args:
+            environment: molecules.Molecule; the environment to run on.
+            dqn: DeepQNetwork used for estimating rewards.
+            memory: ReplayBuffer used to store observations and rewards.
+            episode: Integer episode number.
+            hparams: HParams.
+            exploration: Schedule used for exploration in the environment.
+            head: Integer index of the DeepQNetwork head to use.
+           Returns:
+            molecules.Result object containing the result of the step.
+        """
+        # Compute the encoding for each valid action from the current state.
+        self.steps_left = self.max_steps_per_episode - self.environment.num_steps_taken
+        self.valid_actions = list(self.environment.get_valid_actions())
+        self.observations = np.vstack([self.get_fingerprint_with_steps_left(act, self.steps_left)
+                                       for act in self.valid_actions])
+        self.action = self.valid_actions[self.dqn.get_action(
+            self.observations, head=self.head, update_epsilon=self.exploration.value(self.episode))]
+        self.action_t_fingerprint = self.get_fingerprint_with_steps_left(self.action, self.steps_left)
+        self.result = self.environment.step(self.action)
+        self.steps_left = self.max_steps_per_episode - self.environment.num_steps_taken
+        self.action_fingerprints = np.vstack([self.get_fingerprint_with_steps_left(act, self.steps_left)
+                                              for act in self.environment.get_valid_actions()])
+
+        # we store the fingerprint of the action in obs_t so action does not matter here.
+        self.memory.add(
+            obs_t=self.action_t_fingerprint,
+            action=0,
+            reward=self.result.reward,
+            obs_tp1=self.action_fingerprints,
+            done=float(self.result.terminated))
+        return self.result
+
+    def get_fingerprint_with_steps_left(self, smiles, steps_left):
+        if smiles is None:
+            return np.zeros((self.fingerprint_length,))
+        molecule = Chem.MolFromSmiles(smiles)
+        if molecule is None:
+            return np.zeros((self.fingerprint_length,))
+        fingerprint = AllChem.GetMorganFingerprintAsBitVect(
+            molecule, self.fingerprint_radius, self.fingerprint_length)
+        arr = np.zeros((1,))
+        # ConvertToNumpyArray takes ~ 0.19 ms, while
+        # np.asarray takes ~ 4.69 ms
+        DataStructs.ConvertToNumpyArray(fingerprint, arr)
+        return np.append(arr, steps_left)

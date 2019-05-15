@@ -7,8 +7,10 @@ sys.path.append('/home/junyoung/workspace/Mol_DQN')
 
 import functools
 import json
+import os
 
 from absl import app
+from Config import config
 from models import deep_q_networks, trainer
 from models.qed_model.optimize_qed import QEDRewardMolecule
 
@@ -41,6 +43,8 @@ def main(argv):
         model=dqn)
 
     Trainer.run_training()
+
+    config.write_hparams(hparams, os.path.join(hparams['save_param']['model_dir'], 'config.json'))
 
 if __name__ == '__main__':
     app.run(main)

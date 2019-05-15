@@ -3,7 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 import sys
-sys.path.append('/home/junyoung/workspace/Lead_Optimization')
+sys.path.append('/home/junyoung/workspace/Mol_DQN')
 
 import functools
 import json
@@ -15,8 +15,8 @@ from models.qed_model.optimize_qed import QEDRewardMolecule
 
 def main(argv):
     del argv  # unused.
-    config_name = '/home/junyoung/workspace/Lead_Optimization/Config/naive_dqn'
-    all_cid = '/home/junyoung/workspace/Lead_Optimization/Config/all_cid'
+    config_name = '/home/junyoung/workspace/Mol_DQN/models/qed_model/config'
+    all_cid = '/home/junyoung/workspace/Mol_DQN/Config/all_cid'
 
     with open(config_name) as f:
         hparams = json.load(f)
@@ -25,20 +25,20 @@ def main(argv):
         all_mols = json.load(f)
 
 
-    environment = QEDRewardMolecule(hparams=hparams,
-                                    init_mol=None,
-                                    all_molecules=all_mols)
+    environment = QEDRewardMolecule(
+        hparams=hparams,
+        init_mol=None,
+        all_molecules=all_mols)
 
     dqn = deep_q_networks.DeepQNetwork(
         hparams=hparams,
         q_fn=functools.partial(
-            deep_q_networks.multi_layer_model, hparams=hparams),
-        grad_clipping=None)
+            deep_q_networks.Q_fn_neuralnet_model, hparams=hparams))
 
     Trainer =trainer.Trainer(
         hparams=hparams,
         environment=environment,
-        dqn=dqn)
+        model=dqn)
 
     Trainer.run_training()
 

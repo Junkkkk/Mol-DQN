@@ -58,13 +58,13 @@ class Molecule_MDP(object):
         if isinstance(init_mol, Chem.Mol):
             self.init_mol = Chem.MolToSmiles(init_mol)
         self.init_mol = init_mol
-        self.atom_types = self.hparams['atom_types']
-        self.allow_removal = self.hparams['allow_removal']
-        self.allow_no_modification = self.hparams['allow_no_modification']
-        self.allow_bonds_between_rings = self.hparams['allow_bonds_between_rings']
-        self.allowed_ring_sizes = self.hparams['allowed_ring_sizes']
-        self.max_steps = self.hparams['max_steps_per_episode']
-        self.discount_factor = self.hparams['discount_factor']
+        self.atom_types = self.hparams['action_param']['atom_types']
+        self.allow_removal = self.hparams['action_param']['allow_removal']
+        self.allow_no_modification = self.hparams['action_param']['allow_no_modification']
+        self.allow_bonds_between_rings = self.hparams['action_param']['allow_bonds_between_rings']
+        self.allowed_ring_sizes = self.hparams['action_param']['allowed_ring_sizes']
+        self.max_steps = self.hparams['train_param']['max_steps_per_episode']
+        self.discount_factor = self.hparams['model_param']['discount_factor']
         self._state = None
         self._valid_actions = []
         # The status should be 'terminated' if initialize() is not called.
@@ -77,7 +77,6 @@ class Molecule_MDP(object):
         self._max_new_bonds = dict(
             zip(self.atom_types, molecules_rules.atom_valences(self.atom_types)))
 
-
     @property
     def state(self):
         return self._state
@@ -87,13 +86,13 @@ class Molecule_MDP(object):
         return self._counter
 
     def get_path(self):
-      return self._path
+        return self._path
 
     def initialize(self):
         """Resets the MDP to its initial state."""
         self._state = self.init_mol
         if self.record_path:
-          self._path = [self._state]
+            self._path = [self._state]
         self._valid_actions = self.get_valid_actions(force_rebuild=True)
         self._counter = 0
 
@@ -127,7 +126,7 @@ class Molecule_MDP(object):
            Returns:
            Float. The reward for the current state.
         """
-        return 0.0
+        pass
 
     def _goal_reached(self):
         """Sets the termination criterion for molecule Generation.

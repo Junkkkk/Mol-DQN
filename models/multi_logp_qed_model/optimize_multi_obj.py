@@ -24,7 +24,7 @@ class Multi_LogP_QED_Molecule(molecules_mdp.Molecule_MDP):
     reward = weight * similarity_score + (1 - weight) *  qed_score
     """
 
-    def __init__(self, all_molecules, similarity_weight, **kwargs):
+    def __init__(self, all_molecules, **kwargs):
         """Initializes the class.
         Args:
           target_molecule: SMILES string. The target molecule against which we
@@ -35,7 +35,7 @@ class Multi_LogP_QED_Molecule(molecules_mdp.Molecule_MDP):
         """
         super(Multi_LogP_QED_Molecule, self).__init__(**kwargs)
         self._all_molecules = all_molecules
-        self._sim_weight = similarity_weight
+        self._sim_weight = self.hparams["train_param"]["similarity_weight"]
 
     def initialize(self):
         self._state = random.choice(self._all_molecules)

@@ -187,5 +187,4 @@ class PrioritizedReplayBuffer(ReplayBuffer):
             assert 0 <= idx < len(self._storage)
             self._it_sum[idx] = priority ** self._alpha
             self._it_min[idx] = priority ** self._alpha
-
             self._max_priority = max(self._max_priority, priority)

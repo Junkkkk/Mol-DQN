@@ -8,14 +8,15 @@ import sys
 sys.path.append('/home/junyoung/workspace/Mol_DQN')
 
 import os
-
+from absl import app
 from Config import config
 from models import deep_q_networks
 from models import trainer
 from models.logp_constraint_model.optimize_logp_constraint import LogP_SimilarityConstraintMolecule
 
 
-def main():
+def main(argv):
+    del argv  # unused.
     config_name = '/home/junyoung/workspace/Mol_DQN/models/logp_constraint_model/config'
     all_cid = '/home/junyoung/workspace/Mol_DQN/Config/all_cid'
 
@@ -48,4 +49,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    app.run(main)

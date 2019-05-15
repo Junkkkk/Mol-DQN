@@ -5,7 +5,7 @@ from __future__ import print_function
 import functools
 import json
 import sys
-sys.path.append('/home/junyoung/workspace/Lead_Optimization')
+sys.path.append('/home/junyoung/workspace/Mol_DQN')
 
 from absl import app
 from models import deep_q_networks
@@ -15,8 +15,8 @@ from models.multi_logp_qed_model.optimize_multi_obj import Multi_LogP_QED_Molecu
 
 def main(argv):
     del argv  # unused.
-    config_name = '/home/junyoung/workspace/Lead_Optimization/Config/naive_dqn'
-    all_cid = '/home/junyoung/workspace/Lead_Optimization/Config/all_cid'
+    config_name = '/home/junyoung/workspace/Mol_DQN/models/multi_logp_qed_model/config'
+    all_cid = '/home/junyoung/workspace/Mol_DQN/Config/all_cid'
 
     with open(config_name) as f:
         hparams = json.load(f)
@@ -26,19 +26,19 @@ def main(argv):
 
     environment = Multi_LogP_QED_Molecule(hparams=hparams,
                                           init_mol=None,
-                                          all_molecules=all_mols,
-                                          similarity_weight=0.4)
+                                          all_molecules=all_mols)
 
     dqn = deep_q_networks.DeepQNetwork(
         hparams=hparams,
         q_fn=functools.partial(
-            deep_q_networks.multi_layer_model, hparams=hparams),
+            deep_q_networks.Q_fn_neuralnet_model,
+            hparams=hparams),
         grad_clipping=None)
 
     Trainer =trainer.Trainer(
         hparams=hparams,
         environment=environment,
-        dqn=dqn)
+        model=dqn)
 
     Trainer.run_training()
 

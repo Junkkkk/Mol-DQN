@@ -77,7 +77,6 @@ class Molecule_MDP(object):
         self._max_new_bonds = dict(
             zip(self.atom_types, molecules_rules.atom_valences(self.atom_types)))
 
-
     @property
     def state(self):
         return self._state
@@ -87,13 +86,13 @@ class Molecule_MDP(object):
         return self._counter
 
     def get_path(self):
-      return self._path
+        return self._path
 
     def initialize(self):
         """Resets the MDP to its initial state."""
         self._state = self.init_mol
         if self.record_path:
-          self._path = [self._state]
+            self._path = [self._state]
         self._valid_actions = self.get_valid_actions(force_rebuild=True)
         self._counter = 0
 

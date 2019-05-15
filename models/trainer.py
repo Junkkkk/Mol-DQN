@@ -18,9 +18,7 @@ from rdkit.Chem import AllChem
 from baselines.common import schedules
 from baselines.deepq import replay_buffer
 
-# TODO(zzp): use the tf.estimator interface.
 class Trainer():
-
     """Runs the training procedure.
     Briefly, the agent runs the action network to get an action to take in
     the environment. The state transition and reward are stored in the memory.
@@ -35,10 +33,10 @@ class Trainer():
     Returns:
         None
     """
-    def __init__(self, hparams, environment, dqn):
+    def __init__(self, hparams, environment, model):
         self.hparams = hparams
         self.environment = environment
-        self.dqn = dqn
+        self.dqn = model
 
         self.max_num_checkpoints = self.hparams['max_num_checkpoints']
         self.num_episodes = self.hparams['num_episodes']
@@ -70,7 +68,7 @@ class Trainer():
                 outside_value=0.01)
             if self.prioritized:
                 self.memory = replay_buffer.PrioritizedReplayBuffer(self.replay_buffer_size,
-                                                               self.prioritized_alpha)
+                                                                    self.prioritized_alpha)
                 self.beta_schedule = schedules.LinearSchedule(
                     self.num_episodes, initial_p=self.prioritized_beta, final_p=0)
             else:
@@ -96,9 +94,7 @@ class Trainer():
             dqn: DeepQNetwork used for estimating rewards.
             memory: ReplayBuffer used to store observations and rewards.
             episode: Integer episode number.
-            global_step: Integer global step; the total number of steps across all
-              episodes.
-            hparams: HParams.
+            global_step: Integer global step; the total number of steps across all episodes.
             summary_writer: FileWriter used for writing Summary protos.
             exploration: Schedule used for exploration in the environment.
             beta_schedule: Schedule used for prioritized replay buffers.
@@ -130,8 +126,8 @@ class Trainer():
                     (state_t, _, reward_t, state_tp1,
                      done_mask) = self.memory.sample(self.batch_size)
                     weight = np.ones([reward_t.shape[0]])
-                # np.atleast_2d cannot be used here because a new dimension will
-                # be always added in the front and there is no way of changing this.
+                # np.atleast_2d cannot be used here
+                # because a new dimension will be always added in the front and there is no way of changing this.
                 if reward_t.ndim == 1:
                     reward_t = np.expand_dims(reward_t, axis=1)
                 td_error, error_summary, _ = self.dqn.train(
@@ -170,10 +166,9 @@ class Trainer():
         self.action = self.valid_actions[self.dqn.get_action(
             self.observations, head=self.head, update_epsilon=self.exploration.value(self.episode))]
         self.action_t_fingerprint = self.get_fingerprint_with_steps_left(self.action, self.steps_left)
-        self.result = self.environment.step(self.action)
-        self.steps_left = self.max_steps_per_episode - self.environment.num_steps_taken
         self.action_fingerprints = np.vstack([self.get_fingerprint_with_steps_left(act, self.steps_left)
                                               for act in self.environment.get_valid_actions()])
+        self.result = self.environment.step(self.action)
 
         # we store the fingerprint of the action in obs_t so action does not matter here.
         self.memory.add(

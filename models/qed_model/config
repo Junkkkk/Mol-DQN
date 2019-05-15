@@ -1,4 +1,6 @@
 {
+    "model_name": "qed_model",
+    "model": "dqn",
     "train_param": {
         "num_episodes": 40000,
         "max_steps_per_episode": 20,
@@ -44,6 +46,6 @@
     "save_param": {
         "save_frequency": 200,
         "max_num_checkpoints": 10,
-        "model_dir": "/home/junyoung/workspace/Mol-DQN/result/qed_model_0"
+        "model_dir": "/home/junyoung/workspace/Mol_DQN/result/qed_model_0"
     }
 }

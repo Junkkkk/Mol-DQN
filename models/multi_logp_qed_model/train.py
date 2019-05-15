@@ -9,15 +9,13 @@ sys.path.append('/home/junyoung/workspace/Mol_DQN')
 
 import os
 
-from absl import app
 from Config import config
 from models import deep_q_networks
 from models import trainer
 from models.multi_logp_qed_model.optimize_multi_obj import Multi_LogP_QED_Molecule
 
 
-def main(argv):
-    del argv  # unused.
+def main():
     config_name = '/home/junyoung/workspace/Mol_DQN/models/multi_logp_qed_model/config'
     all_cid = '/home/junyoung/workspace/Mol_DQN/Config/all_cid'
 
@@ -35,8 +33,7 @@ def main(argv):
         hparams=hparams,
         q_fn=functools.partial(
             deep_q_networks.Q_fn_neuralnet_model,
-            hparams=hparams),
-        grad_clipping=None)
+            hparams=hparams))
 
     Trainer =trainer.Trainer(
         hparams=hparams,
@@ -47,5 +44,6 @@ def main(argv):
 
     config.write_hparams(hparams, os.path.join(hparams['save_param']['model_dir'], 'config.json'))
 
+
 if __name__ == '__main__':
-    app.run(main)
+    main()

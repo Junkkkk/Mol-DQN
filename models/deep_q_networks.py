@@ -10,7 +10,7 @@ import tensorflow as tf
 
 
 class DeepQNetwork(object):
-    def __init__(self, hparams, q_fn, scope='dqn', reuse=None):
+    def __init__(self, hparams, q_fn, reuse=None):
         """Creates the model function.
             Args:
             input_shape: Tuple. The shape of input.
@@ -32,7 +32,7 @@ class DeepQNetwork(object):
         self.double_q = self.hparams['model_param']['double_q']
         self.epsilon = self.hparams['model_param']['epsilon']
         self.discount_factor = self.hparams['model_param']['discount_factor']
-        self.scope = scope
+        self.scope = self.hparams['model']
         self.reuse = reuse
 
     def build(self):
@@ -329,8 +329,6 @@ class DeepQNetwork(object):
         for i, next_state in enumerate(next_states):
             feed_dict[self.state_tp1[i]] = next_state
         return tf.get_default_session().run(ops, feed_dict=feed_dict)
-
-
 
 
 def Q_fn_neuralnet_model(inputs, hparams, reuse=None):

@@ -1,4 +1,6 @@
 {
+    "model_name": "logp_model",
+    "model": "dqn",
     "train_param": {
         "num_episodes": 40000,
         "max_steps_per_episode": 20,
@@ -11,7 +13,7 @@
         "update_frequency": 20,
         "batch_norm": true,
         "batch_size": 128,
-        "grad_clipping": 10.0
+        "grad_clipping": 100.0
         "activation": "relu",
         "optimizer": "Adam"
     },
@@ -44,6 +46,6 @@
     "save_param": {
         "save_frequency": 200,
         "max_num_checkpoints": 10,
-        "model_dir": "/home/junyoung/workspace/Mol-DQN/result/logp_model_0"
+        "model_dir": "/home/junyoung/workspace/Mol_DQN/result/logp_model_0"
     }
 }

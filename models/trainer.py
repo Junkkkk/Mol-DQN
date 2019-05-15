@@ -18,9 +18,7 @@ from rdkit.Chem import AllChem
 from baselines.common import schedules
 from baselines.deepq import replay_buffer
 
-# TODO(zzp): use the tf.estimator interface.
 class Trainer():
-
     """Runs the training procedure.
     Briefly, the agent runs the action network to get an action to take in
     the environment. The state transition and reward are stored in the memory.
@@ -35,27 +33,30 @@ class Trainer():
     Returns:
         None
     """
-    def __init__(self, hparams, environment, dqn):
+    def __init__(self, hparams, environment, model):
         self.hparams = hparams
         self.environment = environment
-        self.dqn = dqn
+        self.dqn = model
 
-        self.max_num_checkpoints = self.hparams['max_num_checkpoints']
-        self.num_episodes = self.hparams['num_episodes']
-        self.prioritized = self.hparams['prioritized']
-        self.replay_buffer_size = self.hparams['replay_buffer_size']
-        self.prioritized_alpha = self.hparams['prioritized_alpha']
-        self.prioritized_beta = self.hparams['prioritized_beta']
-        self.update_frequency = self.hparams['update_frequency']
-        self.save_frequency = self.hparams['save_frequency']
-        self.num_bootstrap_heads = self.hparams['num_bootstrap_heads']
-        self.max_steps_per_episode = self.hparams['max_steps_per_episode']
-        self.learning_frequency = self.hparams['learning_frequency']
-        self.batch_size = self.hparams['batch_size']
-        self.prioritized_epsilon = self.hparams['prioritized_epsilon']
-        self.fingerprint_length = self.hparams['fingerprint_length']
-        self.fingerprint_radius = self.hparams['fingerprint_radius']
-        self.model_dir = self.hparams['model_dir']
+        self.num_episodes = self.hparams['train_param']['num_episodes']
+        self.max_steps_per_episode = self.hparams['train_param']['max_steps_per_episode']
+        self.learning_frequency = self.hparams['train_param']['learning_frequency']
+        self.update_frequency = self.hparams['train_param']['update_frequency']
+        self.batch_size = self.hparams['train_param']['batch_size']
+
+        self.prioritized = self.hparams['model_param']['prioritized']
+        self.replay_buffer_size = self.hparams['model_param']['replay_buffer_size']
+        self.prioritized_alpha = self.hparams['model_param']['prioritized_alpha']
+        self.prioritized_beta = self.hparams['model_param']['prioritized_beta']
+        self.num_bootstrap_heads = self.hparams['model_param']['num_bootstrap_heads']
+        self.prioritized_epsilon = self.hparams['model_param']['prioritized_epsilon']
+
+        self.fingerprint_length = self.hparams['ingredient_param']['fingerprint_length']
+        self.fingerprint_radius = self.hparams['ingredient_param']['fingerprint_radius']
+
+        self.model_dir = self.hparams['save_param']['model_dir']
+        self.max_num_checkpoints = self.hparams['save_param']['max_num_checkpoints']
+        self.save_frequency = self.hparams['save_param']['save_frequency']
 
     def run_training(self):
         self.summary_writer = tf.summary.FileWriter(self.model_dir)
@@ -70,7 +71,7 @@ class Trainer():
                 outside_value=0.01)
             if self.prioritized:
                 self.memory = replay_buffer.PrioritizedReplayBuffer(self.replay_buffer_size,
-                                                               self.prioritized_alpha)
+                                                                    self.prioritized_alpha)
                 self.beta_schedule = schedules.LinearSchedule(
                     self.num_episodes, initial_p=self.prioritized_beta, final_p=0)
             else:
@@ -96,9 +97,7 @@ class Trainer():
             dqn: DeepQNetwork used for estimating rewards.
             memory: ReplayBuffer used to store observations and rewards.
             episode: Integer episode number.
-            global_step: Integer global step; the total number of steps across all
-              episodes.
-            hparams: HParams.
+            global_step: Integer global step; the total number of steps across all episodes.
             summary_writer: FileWriter used for writing Summary protos.
             exploration: Schedule used for exploration in the environment.
             beta_schedule: Schedule used for prioritized replay buffers.
@@ -130,8 +129,8 @@ class Trainer():
                     (state_t, _, reward_t, state_tp1,
                      done_mask) = self.memory.sample(self.batch_size)
                     weight = np.ones([reward_t.shape[0]])
-                # np.atleast_2d cannot be used here because a new dimension will
-                # be always added in the front and there is no way of changing this.
+                # np.atleast_2d cannot be used here
+                # because a new dimension will be always added in the front and there is no way of changing this.
                 if reward_t.ndim == 1:
                     reward_t = np.expand_dims(reward_t, axis=1)
                 td_error, error_summary, _ = self.dqn.train(
@@ -170,10 +169,9 @@ class Trainer():
         self.action = self.valid_actions[self.dqn.get_action(
             self.observations, head=self.head, update_epsilon=self.exploration.value(self.episode))]
         self.action_t_fingerprint = self.get_fingerprint_with_steps_left(self.action, self.steps_left)
-        self.result = self.environment.step(self.action)
-        self.steps_left = self.max_steps_per_episode - self.environment.num_steps_taken
         self.action_fingerprints = np.vstack([self.get_fingerprint_with_steps_left(act, self.steps_left)
                                               for act in self.environment.get_valid_actions()])
+        self.result = self.environment.step(self.action)
 
         # we store the fingerprint of the action in obs_t so action does not matter here.
         self.memory.add(

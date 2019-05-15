@@ -13,11 +13,11 @@ class Molecules_Action(object):
     def __init__(self, hparams):
         self.hparams = hparams
 
-        self.atom_types = hparams['atom_types']
-        self.allow_removal = hparams['allow_removal']
-        self.allow_no_modification = hparams['allow_no_modification']
-        self.allowed_ring_sizes = hparams['allowed_ring_sizes']
-        self.allow_bonds_between_rings = hparams['allow_bonds_between_rings']
+        self.atom_types = hparams['action_param']['atom_types']
+        self.allow_removal = hparams['action_param']['allow_removal']
+        self.allow_no_modification = hparams['action_param']['allow_no_modification']
+        self.allowed_ring_sizes = hparams['action_param']['allowed_ring_sizes']
+        self.allow_bonds_between_rings = hparams['action_param']['allow_bonds_between_rings']
 
     def get_valid_actions(self, state):
         """Computes the set of valid actions for a given state.
@@ -52,7 +52,7 @@ class Molecules_Action(object):
         valid_actions.update(self._atom_addition(mol))
         valid_actions.update(self._bond_addition(mol))
         if self.allow_removal:
-            valid_actions.update(_bond_removal(mol))
+            valid_actions.update(self._bond_removal(mol))
         if self.allow_no_modification:
             valid_actions.add(Chem.MolToSmiles(mol))
         return valid_actions

@@ -12,9 +12,6 @@ from rdkit import Chem
 from rdkit.Chem import QED
 from rdkit.Chem import AllChem
 
-import sys
-sys.path.append('/home/junyoung/workspace/Lead_Optimization')
-
 from models import deep_q_networks, trainer, molecules_mdp
 
 

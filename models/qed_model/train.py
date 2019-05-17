@@ -29,8 +29,7 @@ def main(argv):
 
     environment = QEDRewardMolecule(
         hparams=hparams,
-        init_mol=None,
-        all_molecules=all_mols)
+        molecules=all_mols)
 
     dqn = deep_q_networks.DeepQNetwork(
         hparams=hparams,

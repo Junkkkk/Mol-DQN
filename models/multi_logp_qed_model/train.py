@@ -28,8 +28,7 @@ def main(argv):
         all_mols = json.load(f)
 
     environment = Multi_LogP_QED_Molecule(hparams=hparams,
-                                          init_mol=None,
-                                          all_molecules=all_mols)
+                                          molecules=all_mols)
 
     dqn = deep_q_networks.DeepQNetwork(
         hparams=hparams,

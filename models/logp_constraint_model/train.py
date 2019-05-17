@@ -29,8 +29,7 @@ def main(argv):
 
     environment = LogP_SimilarityConstraintMolecule(
         hparams=hparams,
-        init_mol=None,
-        all_molecules=all_mols,
+        molecules=all_mols,
         similarity_constraint=0.5)
 
     dqn = deep_q_networks.DeepQNetwork(

@@ -24,7 +24,7 @@ class Multi_LogP_QED_Molecule(molecules_mdp.Molecule_MDP):
     reward = weight * similarity_score + (1 - weight) *  qed_score
     """
 
-    def __init__(self, all_molecules, **kwargs):
+    def __init__(self, molecules, **kwargs):
         """Initializes the class.
         Args:
           target_molecule: SMILES string. The target molecule against which we
@@ -34,17 +34,18 @@ class Multi_LogP_QED_Molecule(molecules_mdp.Molecule_MDP):
           **kwargs: The keyword arguments passed to the parent class.
         """
         super(Multi_LogP_QED_Molecule, self).__init__(**kwargs)
-        self._all_molecules = all_molecules
+        self._all_molecules = molecules
         self._sim_weight = self.hparams["train_param"]["similarity_weight"]
 
     def initialize(self):
-        self._state = random.choice(self._all_molecules)
+        self._state = random.choice(self.molecules)
         self._target_mol_fingerprint = self.get_fingerprint(
             Chem.MolFromSmiles(self._state))
         if self.record_path:
             self._path = [self._state]
         self._valid_actions = self.get_valid_actions(force_rebuild=True)
         self._counter = 0
+        return self._state
 
     def get_fingerprint(self, molecule):
         return AllChem.GetMorganFingerprint(molecule, radius=2)

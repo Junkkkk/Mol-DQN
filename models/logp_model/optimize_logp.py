@@ -10,9 +10,21 @@ from models import molecules_mdp
 from models import molecules_rules
 
 class LogP_Molecule(molecules_mdp.Molecule_MDP):
-    def __init__(self, all_molecules, **kwargs):
+    def __init__(self, molecules, **kwargs):
         super(LogP_Molecule, self).__init__(**kwargs)
-        self._all_molecules = all_molecules
+        self.molecules = molecules
+
+    def initialize(self):
+        """Resets the MDP to its initial state.
+        Each time the environment is initialized, we uniformly choose
+        a molecule from all molecules as target.
+        """
+        self._state = self.molecules
+        if self.record_path:
+            self._path = [self._state]
+        self._valid_actions = self.get_valid_actions(force_rebuild=True)
+        self._counter = 0
+        return self._state
 
     def _reward(self):
         molecule = Chem.MolFromSmiles(self._state)

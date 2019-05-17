@@ -27,14 +27,11 @@ class Result(collections.namedtuple('Result', ['state', 'reward', 'terminated'])
 
 class Molecule_MDP(object):
     """Defines the Markov decision process of generating a molecule."""
-    def __init__(self, hparams, init_mol, target_fn=None, record_path=False):
+    def __init__(self, hparams, target_fn=None, record_path=False):
         """Initializes the parameters for the MDP.
            Internal state will be stored as SMILES strings.
            Args:
            atom_types: The set of elements the molecule may contain.
-           init_mol: String, Chem.Mol, or Chem.RWMol. If string is provided, it is
-           considered as the SMILES string. The molecule to be set as the initial
-           state. If None, an empty molecule will be created.
            allow_removal: Boolean. Whether to allow removal of a bond.
            allow_no_modification: Boolean. If true, the valid action set will
            include doing nothing to the current molecule, i.e., the current
@@ -55,9 +52,7 @@ class Molecule_MDP(object):
            record_path: Boolean. Whether to record the steps internally.
         """
         self.hparams = hparams
-        if isinstance(init_mol, Chem.Mol):
-            self.init_mol = Chem.MolToSmiles(init_mol)
-        self.init_mol = init_mol
+
         self.atom_types = self.hparams['action_param']['atom_types']
         self.allow_removal = self.hparams['action_param']['allow_removal']
         self.allow_no_modification = self.hparams['action_param']['allow_no_modification']
@@ -73,7 +68,6 @@ class Molecule_MDP(object):
         self.record_path = record_path
         self._path = []
         self._max_bonds = 4
-        atom_types = list(self.atom_types)
         self._max_new_bonds = dict(
             zip(self.atom_types, molecules_rules.atom_valences(self.atom_types)))
 
@@ -90,11 +84,7 @@ class Molecule_MDP(object):
 
     def initialize(self):
         """Resets the MDP to its initial state."""
-        self._state = self.init_mol
-        if self.record_path:
-            self._path = [self._state]
-        self._valid_actions = self.get_valid_actions(force_rebuild=True)
-        self._counter = 0
+        pass
 
     def get_valid_actions(self, state=None, force_rebuild=False):
         """Gets the valid actions for the state.

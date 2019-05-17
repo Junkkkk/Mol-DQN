@@ -10,7 +10,7 @@ class LogP_SimilarityConstraintMolecule(molecules_mdp.Molecule_MDP):
        Each time the environment is initialized, we uniformly choose
        a molecule from all molecules as target.
     """
-    def __init__(self, all_molecules, similarity_constraint, **kwargs):
+    def __init__(self, molecules, similarity_constraint, **kwargs):
 
         """Initializes the class.
             Args:
@@ -20,7 +20,7 @@ class LogP_SimilarityConstraintMolecule(molecules_mdp.Molecule_MDP):
             **kwargs: The keyword arguments passed to the parent class.
         """
         super(LogP_SimilarityConstraintMolecule, self).__init__(**kwargs)
-        self._all_molecules = all_molecules
+        self.molecules = molecules
         self._similarity_constraint = similarity_constraint
 
     def initialize(self):
@@ -28,13 +28,14 @@ class LogP_SimilarityConstraintMolecule(molecules_mdp.Molecule_MDP):
         Each time the environment is initialized, we uniformly choose
         a molecule from all molecules as target.
         """
-        self._state = random.choice(self._all_molecules)
+        self._state = random.choice(self.molecules)
         self._target_mol_fingerprint = self.get_fingerprint(
             Chem.MolFromSmiles(self._state))
         if self.record_path:
             self._path = [self._state]
         self._valid_actions = self.get_valid_actions(force_rebuild=True)
         self._counter = 0
+        return self._state
 
     def get_fingerprint(self, molecule):
         return AllChem.GetMorganFingerprint(molecule, radius=2)

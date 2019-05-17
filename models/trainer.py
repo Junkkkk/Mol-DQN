@@ -8,7 +8,6 @@ sys.path.append('/home/junyoung/workspace/Mol_DQN')
 
 import os
 import time
-from absl import logging
 import numpy as np
 import tensorflow as tf
 from rdkit import Chem
@@ -17,6 +16,7 @@ from rdkit.Chem import AllChem
 
 from baselines.common import schedules
 from baselines.deepq import replay_buffer
+from models.utils import get_logger
 
 class Trainer():
     """Runs the training procedure.
@@ -38,6 +38,7 @@ class Trainer():
         self.environment = environment
         self.dqn = model
 
+        self.model_name = self.hparams['model_name']
         self.num_episodes = self.hparams['train_param']['num_episodes']
         self.max_steps_per_episode = self.hparams['train_param']['max_steps_per_episode']
         self.learning_frequency = self.hparams['train_param']['learning_frequency']
@@ -54,12 +55,14 @@ class Trainer():
         self.fingerprint_length = self.hparams['ingredient_param']['fingerprint_length']
         self.fingerprint_radius = self.hparams['ingredient_param']['fingerprint_radius']
 
-        self.model_dir = self.hparams['save_param']['model_dir']
+        self.model_path = self.hparams['save_param']['model_path']
+        self.log_path = self.hparams['save_param']['log_path']
         self.max_num_checkpoints = self.hparams['save_param']['max_num_checkpoints']
         self.save_frequency = self.hparams['save_param']['save_frequency']
+        self.logger = get_logger(self.model_name, self.log_path)
 
     def run_training(self):
-        self.summary_writer = tf.summary.FileWriter(self.model_dir)
+        self.summary_writer = tf.summary.FileWriter(self.model_path)
         tf.reset_default_graph()
         with tf.Session() as sess:
             self.dqn.build()
@@ -87,8 +90,8 @@ class Trainer():
                 if (self.episode + 1) % self.save_frequency == 0:
                     model_saver.save(
                         sess,
-                        os.path.join(self.model_dir, 'ckpt'),
-                        global_step=self.global_step)
+                        os.path.join(self.model_path, self.model_name+'_ckpt'),
+                        global_step=self.episode+1)
 
     def _episode(self):
         """Runs a single episode.
@@ -105,7 +108,8 @@ class Trainer():
             Updated global_step.
         """
         episode_start_time = time.time()
-        self.environment.initialize()
+        init_mol = self.environment.initialize()
+        self.logger.warning('The SMILES of init mol : %s', init_mol)
         if self.num_bootstrap_heads:
             self.head = np.random.randint(self.num_bootstrap_heads)
         else:
@@ -115,12 +119,12 @@ class Trainer():
             if step == self.max_steps_per_episode - 1:
                 episode_summary = self.dqn.log_result(self.result.state, self.result.reward)
                 self.summary_writer.add_summary(episode_summary, self.global_step)
-                logging.info('Episode %d/%d took %gs', self.episode + 1, self.num_episodes,
-                             time.time() - episode_start_time)
-                logging.info('SMILES: %s\n', self.result.state)
+                self.logger.warning('Episode %d/%d took %gs', self.episode + 1, self.num_episodes,
+                                    time.time() - episode_start_time)
+                self.logger.warning('The SMILES of last mol : %s\n', self.result.state)
                 # Use %s since reward can be a tuple or a float number.
-                logging.info('The reward is: %s', str(self.result.reward))
-            if (self.episode > min(50, self.num_episodes / 10)) and (self.global_step % self.learning_frequency == 0):
+                self.logger.warning('The reward is: %s', str(self.result.reward))
+            if (self.episode > min(500, self.num_episodes / 10)) and (self.global_step % self.learning_frequency == 0):
                 if self.prioritized:
                     (state_t, _, reward_t, state_tp1, done_mask, weight,
                      indices) = self.memory.sample(
@@ -140,7 +144,7 @@ class Trainer():
                     done=np.expand_dims(done_mask, axis=1),
                     weight=np.expand_dims(weight, axis=1))
                 self.summary_writer.add_summary(error_summary, self.global_step)
-                logging.info('Current TD error: %.4f', np.mean(np.abs(td_error)))
+                self.logger.warning('Current TD error: %.4f', np.mean(np.abs(td_error)))
                 if self.prioritized:
                     self.memory.update_priorities(
                         indices,

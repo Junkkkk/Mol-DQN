@@ -22,18 +22,17 @@ class Molecules_Action(object):
     def get_valid_actions(self, state):
         """Computes the set of valid actions for a given state.
             Args:
-            state: String SMILES; the current state. If None or the empty string, we
-            assume an "empty" state with no atoms or bonds.
+            state: String SMILES; the current state.
+            If None or the empty string, we assume an "empty" state with no atoms or bonds.
             atom_types: Set of string atom types, e.g. {'C', 'O'}.
             allow_removal: Boolean whether to allow actions that remove atoms and bonds.
             allow_no_modification: Boolean whether to include a "no-op" action.
-            allowed_ring_sizes: Set of integer allowed ring sizes; used to remove some
-            actions that would create rings with disallowed sizes.
-            allow_bonds_between_rings: Boolean whether to allow actions that add bonds
-            between atoms that are both in rings.
+            allowed_ring_sizes: Set of integer allowed ring sizes;
+            used to remove some actions that would create rings with disallowed sizes.
+            allow_bonds_between_rings: Boolean whether to allow actions that add bonds between atoms that are both in rings.
             Returns:
-            Set of string SMILES containing the valid actions (technically, the set of
-            all states that are acceptable from the given state).
+            Set of string SMILES containing the valid actions
+            (technically, the set of all states that are acceptable from the given state).
             Raises:
             ValueError: If state does not represent a valid molecule.
         """
@@ -61,15 +60,12 @@ class Molecules_Action(object):
         """Computes valid actions that involve adding atoms to the graph.
             Actions:
             * Add atom (with a bond connecting it to the existing graph)
-            Each added atom is connected to the graph by a bond. There is a separate
-            action for connecting to (a) each existing atom with (b) each valence-allowed
-            bond type. Note that the connecting bond is only of type single, double, or
-            triple (no aromatic bonds are added).
-            For example, if an existing carbon atom has two empty valence positions and
-            the available atom types are {'C', 'O'}, this section will produce new states
-            where the existing carbon is connected to (1) another carbon by a double bond,
-            (2) another carbon by a single bond, (3) an oxygen by a double bond, and
-            (4) an oxygen by a single bond.
+            Each added atom is connected to the graph by a bond.
+            There is a separate action for connecting to (a) each existing atom with (b) each valence-allowed bond type.
+            Note that the connecting bond is only of type single, double, or triple (no aromatic bonds are added).
+            For example, if an existing carbon atom has two empty valence positions and the available atom types are {'C', 'O'},
+            this section will produce new states where the existing carbon is connected to (1) another carbon by a double bond,
+            (2) another carbon by a single bond, (3) an oxygen by a double bond, and (4) an oxygen by a single bond.
             Args:
             state: RDKit Mol.
             atom_types: Set of string atom types.

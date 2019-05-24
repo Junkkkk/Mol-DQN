@@ -108,22 +108,22 @@ class Trainer():
             Updated global_step.
         """
         episode_start_time = time.time()
-        init_mol = self.environment.initialize()
-        self.logger.warning('The SMILES of init mol : %s', init_mol)
+        state_t_mol = self.environment.initialize()
+        self.logger.info('The SMILES of init mol : %s', state_t_mol)
         if self.num_bootstrap_heads:
             self.head = np.random.randint(self.num_bootstrap_heads)
         else:
             self.head = 0
         for step in range(self.max_steps_per_episode):
-            self.result = self._step()
+            self.result = self._step(state_t_mol)
             if step == self.max_steps_per_episode - 1:
                 episode_summary = self.dqn.log_result(self.result.state, self.result.reward)
                 self.summary_writer.add_summary(episode_summary, self.global_step)
-                self.logger.warning('Episode %d/%d took %gs', self.episode + 1, self.num_episodes,
+                self.logger.info('Episode %d/%d took %gs', self.episode + 1, self.num_episodes,
                                     time.time() - episode_start_time)
-                self.logger.warning('The SMILES of last mol : %s\n', self.result.state)
+                self.logger.info('The SMILES of last mol : %s', self.result.state)
                 # Use %s since reward can be a tuple or a float number.
-                self.logger.warning('The reward is: %s', str(self.result.reward))
+                self.logger.info('The reward is: %s\n', str(self.result.reward))
             if (self.episode > min(500, self.num_episodes / 10)) and (self.global_step % self.learning_frequency == 0):
                 if self.prioritized:
                     (state_t, _, reward_t, state_tp1, done_mask, weight,
@@ -133,7 +133,7 @@ class Trainer():
                     (state_t, _, reward_t, state_tp1,
                      done_mask) = self.memory.sample(self.batch_size)
                     weight = np.ones([reward_t.shape[0]])
-                # np.atleast_2d cannot be used here
+                # np.at least_2d cannot be used here
                 # because a new dimension will be always added in the front and there is no way of changing this.
                 if reward_t.ndim == 1:
                     reward_t = np.expand_dims(reward_t, axis=1)
@@ -144,15 +144,17 @@ class Trainer():
                     done=np.expand_dims(done_mask, axis=1),
                     weight=np.expand_dims(weight, axis=1))
                 self.summary_writer.add_summary(error_summary, self.global_step)
-                self.logger.warning('Current TD error: %.4f', np.mean(np.abs(td_error)))
+                self.logger.info('The SMILES of %d steps mol: %s', step, self.result.state)
+                self.logger.info('Current reward: %.4f',  self.result.reward)
                 if self.prioritized:
                     self.memory.update_priorities(
                         indices,
                         np.abs(np.squeeze(td_error) + self.prioritized_epsilon).tolist())
             self.global_step += 1
+            state_t_mol = self.result.state
         return self.global_step
 
-    def _step(self):
+    def _step(self, state_t):
         """Runs a single step within an episode.
            Args:
             environment: molecules.Molecule; the environment to run on.
@@ -167,24 +169,38 @@ class Trainer():
         """
         # Compute the encoding for each valid action from the current state.
         self.steps_left = self.max_steps_per_episode - self.environment.num_steps_taken
-        self.valid_actions = list(self.environment.get_valid_actions())
+        self.valid_actions = list(self.environment.get_valid_actions(state_t))
         self.observations = np.vstack([self.get_fingerprint_with_steps_left(act, self.steps_left)
                                        for act in self.valid_actions])
         self.action = self.valid_actions[self.dqn.get_action(
             self.observations, head=self.head, update_epsilon=self.exploration.value(self.episode))]
         self.action_t_fingerprint = self.get_fingerprint_with_steps_left(self.action, self.steps_left)
         self.action_fingerprints = np.vstack([self.get_fingerprint_with_steps_left(act, self.steps_left)
-                                              for act in self.environment.get_valid_actions()])
+                                              for act in self.valid_actions])
         self.result = self.environment.step(self.action)
 
         # we store the fingerprint of the action in obs_t so action does not matter here.
         self.memory.add(
             obs_t=self.action_t_fingerprint,
-            action=0,
+            action=self.action,
             reward=self.result.reward,
             obs_tp1=self.action_fingerprints,
             done=float(self.result.terminated))
         return self.result
+
+    def get_fingerprint(self, smiles):
+        if smiles is None:
+            return np.zeros((self.fingerprint_length,))
+        molecule = Chem.MolFromSmiles(smiles)
+        if molecule is None:
+            return np.zeros((self.fingerprint_length,))
+        fingerprint = AllChem.GetMorganFingerprintAsBitVect(
+            molecule, self.fingerprint_radius, self.fingerprint_length)
+        arr = np.zeros((1,))
+        # ConvertToNumpyArray takes ~ 0.19 ms, while
+        # np.asarray takes ~ 4.69 ms
+        DataStructs.ConvertToNumpyArray(fingerprint, arr)
+        return arr
 
     def get_fingerprint_with_steps_left(self, smiles, steps_left):
         if smiles is None:

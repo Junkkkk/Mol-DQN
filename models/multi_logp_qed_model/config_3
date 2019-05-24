@@ -3,7 +3,7 @@
     "model": "dqn",
     "train_param": {
         "comment_sim_weight" : "proportion of similiarity in reward [0,1]",
-        "similarity_weight" : 0.2,
+        "similarity_weight" : 0.8,
         "num_episodes": 40000,
         "max_steps_per_episode": 20,
         "learning_rate": 0.0001,
@@ -48,7 +48,7 @@
     "save_param": {
         "save_frequency": 200,
         "max_num_checkpoints": 10,
-        "model_path": "/home/junyoung/workspace/Mol_DQN/result/m0",
-        "log_path": "/home/junyoung/workspace/Mol_DQN/result/m0/log.log"
+        "model_path": "/data/junyoung/workspace/Mol_DQN/result/m3",
+        "log_path": "/data/junyoung/workspace/Mol_DQN/result/m3/log.log"
     }
 }

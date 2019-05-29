@@ -3,9 +3,9 @@
     "model": "dqn",
     "train_param": {
         "comment_sim_weight" : "proportion of similiarity in reward [0,1]",
-        "similarity_weight" : 0.2,
-        "num_episodes": 40000,
-        "max_steps_per_episode": 20,
+        "similarity_weight" : 0.4,
+        "num_episodes": 5000,
+        "max_steps_per_episode": 40,
         "learning_rate": 0.0001,
         "learning_rate_decay_steps": 1000,
         "learning_rate_decay_rate": 0.99,
@@ -28,7 +28,7 @@
         "gamma": 1.0,
         "discount_factor": 0.99,
         "double_q": true,
-        "replay_buffer_size": 20000,
+        "replay_buffer_size": 50000,
         "prioritized": false,
         "prioritized_alpha": 0.6,
         "prioritized_beta": 0.4,
@@ -48,7 +48,7 @@
     "save_param": {
         "save_frequency": 200,
         "max_num_checkpoints": 10,
-        "model_path": "/home/junyoung/workspace/Mol_DQN/result/m0_1",
-        "log_path": "/home/junyoung/workspace/Mol_DQN/result/m0_1/log.log"
+        "model_path": "/home/junyoung/workspace/Mol_DQN/result/multi_logp_qed_model_2",
+        "log_path": "/home/junyoung/workspace/Mol_DQN/result/multi_logp_qed_model_2/log.log"
     }
 }

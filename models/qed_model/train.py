@@ -26,7 +26,7 @@ def main(argv):
     with open(all_cid) as f:
         all_mols = json.load(f)
 
-    init_mol = ["CCC[NH2+]CC/C=C(/C)[C@@H]1CCOC2(CCSCC2)C1"]
+    init_mol = ["CNC(=O)/C(C#N)=C(/[O-])C1=NN(c2cc(C)ccc2C)C(=O)CC1"]
 
     environment = QEDRewardMolecule(
         hparams=hparams,

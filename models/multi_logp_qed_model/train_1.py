@@ -5,7 +5,7 @@ from __future__ import print_function
 import functools
 import json
 import sys
-sys.path.append('/data/junyoung/workspace/Mol_DQN')
+sys.path.append('/home/junyoung/workspace/Mol_DQN')
 
 import os
 from absl import app
@@ -18,8 +18,8 @@ from models.multi_logp_qed_model.optimize_multi_obj import Multi_LogP_QED_Molecu
 
 def main(argv):
     del argv  # unused.
-    config_name = '/data/junyoung/workspace/Mol_DQN/models/multi_logp_qed_model/config_1'
-    all_cid = '/data/junyoung/workspace/Mol_DQN/Config/all_cid'
+    config_name = '/home/junyoung/workspace/Mol_DQN/models/multi_logp_qed_model/config_1'
+    all_cid = '/home/junyoung/workspace/Mol_DQN/Config/all_cid'
 
     with open(config_name) as f:
         hparams = json.load(f)
@@ -27,10 +27,10 @@ def main(argv):
     with open(all_cid) as f:
         all_mols = json.load(f)
 
-    # init_mol = ["CNC(=O)/C(C#N)=C(/[O-])C1=NN(c2cc(C)ccc2C)C(=O)CC1"]
+    init_mol = ["CNC(=O)/C(C#N)=C(/[O-])C1=NN(c2cc(C)ccc2C)C(=O)CC1"]
 
     environment = Multi_LogP_QED_Molecule(hparams=hparams,
-                                          molecules=all_mols)
+                                          molecules=init_mol)
 
     dqn = deep_q_networks.DeepQNetwork(
         hparams=hparams,

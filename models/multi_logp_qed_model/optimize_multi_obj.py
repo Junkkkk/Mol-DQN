@@ -43,12 +43,12 @@ class Multi_LogP_QED_Molecule(molecules_mdp.Molecule_MDP):
             Chem.MolFromSmiles(self._state))
         if self.record_path:
             self._path = [self._state]
-        self._valid_actions = self.get_valid_actions(self._state, force_rebuild=True)
+        self._valid_actions = self.get_valid_actions(force_rebuild=True)
         self._counter = 0
         return self._state
 
     def get_fingerprint(self, molecule):
-        return AllChem.GetMorganFingerprint(molecule, radius=3)
+        return AllChem.GetMorganFingerprint(molecule, radius=2)
 
     def get_similarity(self, smiles):
         """Gets the similarity between the current molecule and the target molecule.

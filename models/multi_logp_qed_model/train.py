@@ -27,10 +27,10 @@ def main(argv):
     with open(all_cid) as f:
         all_mols = json.load(f)
 
-    # init_mol = ["CNC(=O)/C(C#N)=C(/[O-])C1=NN(c2cc(C)ccc2C)C(=O)CC1"]
+    init_mol = ["CNC(=O)/C(C#N)=C(/[O-])C1=NN(c2cc(C)ccc2C)C(=O)CC1"]
 
     environment = Multi_LogP_QED_Molecule(hparams=hparams,
-                                          molecules=all_mols)
+                                          molecules=init_mol)
 
     dqn = deep_q_networks.DeepQNetwork(
         hparams=hparams,

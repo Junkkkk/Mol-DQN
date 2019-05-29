@@ -687,6 +687,7 @@
   "COC(=O)[C@@H](NC(=O)Cn1cnnn1)c1ccc(Cl)c(F)c1",
   "O=C([O-])[C@H]1CCCN(c2ccc([O-])nn2)C1",
   "CC[C@H](CC[NH3+])N1CCCN(CC(F)(F)F)CC1",
+  "CCC[NH2+]CC/C=C(/C)[C@@H]1CCOC2(CCSCC2)C1",
   "O=C(CN1CCN(C(=O)[C@H]2CC(=O)N(c3ccc4c(c3)OCCO4)C2)CC1)N1CCOCC1",
   "COc1ccc([C@@](C)([NH3+])Cc2[nH+]ccn2C)cc1",
   "Cc1cscc1C[NH2+]C[C@@H](O)C[NH+]1CCCC1",

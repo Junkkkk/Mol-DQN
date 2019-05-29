@@ -26,10 +26,11 @@ def main(argv):
     with open(all_cid) as f:
         all_mols = json.load(f)
 
+    init_mol = ["CCC[NH2+]CC/C=C(/C)[C@@H]1CCOC2(CCSCC2)C1"]
 
     environment = QEDRewardMolecule(
         hparams=hparams,
-        molecules=all_mols)
+        molecules=init_mol)
 
     dqn = deep_q_networks.DeepQNetwork(
         hparams=hparams,

@@ -86,15 +86,15 @@ class Molecule_MDP(object):
         """Resets the MDP to its initial state."""
         pass
 
-    def get_valid_actions(self, state=None, force_rebuild=False):
+    def get_valid_actions(self, state, force_rebuild=False):
         """Gets the valid actions for the state.
-          In this design, we do not further modify a aromatic ring. For example,
-          we do not change a benzene to a 1,3-Cyclohexadiene. That is, aromatic
-          bonds are not modified.
+          In this design, we do not further modify a aromatic ring.
+          For example, we do not change a benzene to a 1,3-Cyclohexadiene.
+           That is, aromatic bonds are not modified.
           Args:
-          state: String, Chem.Mol, or Chem.RWMol. If string is provided, it is
-          considered as the SMILES string. The state to query. If None, the
-          current state will be considered.
+          state: String, Chem.Mol, or Chem.RWMol.
+          If string is provided, it is considered as the SMILES string. The state to query.
+          If None, the current state will be considered.
           force_rebuild: Boolean. Whether to force rebuild of the valid action set.
           Returns:
           A set contains all the valid actions for the state. Each action is a
@@ -150,7 +150,7 @@ class Molecule_MDP(object):
         self._state = action
         if self.record_path:
             self._path.append(self._state)
-        self._valid_actions = self.get_valid_actions(force_rebuild=True)
+        # self._valid_actions = self.get_valid_actions(state, force_rebuild=True)
         self._counter += 1
 
         result = Result(

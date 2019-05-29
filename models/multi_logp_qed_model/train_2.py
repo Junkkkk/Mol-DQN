@@ -6,6 +6,8 @@ import functools
 import json
 import sys
 sys.path.append('/home/junyoung/workspace/Mol_DQN')
+sys.path.append('/data/junyoung/workspace/Mol_DQN')
+
 
 import os
 from absl import app
@@ -18,7 +20,7 @@ from models.multi_logp_qed_model.optimize_multi_obj import Multi_LogP_QED_Molecu
 
 def main(argv):
     del argv  # unused.
-    config_name = '/home/junyoung/workspace/Mol_DQN/models/multi_logp_qed_model/config'
+    config_name = '/home/junyoung/workspace/Mol_DQN/models/multi_logp_qed_model/config_2'
     all_cid = '/home/junyoung/workspace/Mol_DQN/Config/all_cid'
 
     with open(config_name) as f:
